@@ -36,6 +36,10 @@ class SocketService {
     socket.on(SocketVideoCallEvent.onAcceptCall, (data: TSocketEventCall) => {
       this.socketCallVideo.emitAccpetCall(socket, data)
     })
+
+    socket.on(SocketVideoCallEvent.emitCancelCall, (data: TSocketEventCall) => {
+      this.socketCallVideo.emitCancelCall(socket, data)
+    })
   }
 }
 
