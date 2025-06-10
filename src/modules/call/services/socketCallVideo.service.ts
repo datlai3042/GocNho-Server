@@ -12,6 +12,9 @@ export type TSocketEventCall = {
 
 export enum SocketVideoCallEvent {
   emitInitVideoCall = 'emitInitVideoCall',
+  emitRequestCall = 'emitRequestCall',
+  onWaitingConnect = 'onWaitingConnect',
+
   emitRejectCall = 'emitRejectCall',
   emitAccpetCall = "emitAccpetCall",
 
@@ -24,17 +27,14 @@ export enum SocketVideoCallEvent {
 class SocketCallVideo {
   static async findUserEmiter({ user_id }: { user_id: string }) {
     const findUserCall = await userModel.findOne({ _id: new Types.ObjectId(user_id) }).select({ user_atlas: true, user_avatar_system: true, user_email: true })
-    console.log('step1')
     if (!findUserCall) {
       return { user_emiter: null }
     }
     const user_socket = global._userSocket.find((user) => user.client_id === findUserCall?._id.toString())
-    console.log('step2')
 
     if (!user_socket) {
       return { user_emiter: null }
     }
-    console.log('step3')
 
     return {
       user_emiter: {
@@ -47,9 +47,10 @@ class SocketCallVideo {
     const { caller_id, onwer_id, receiver_id } = data
     const findUserReceiver = global._userSocket.find((user) => user?.client_id === receiver_id)
     const findUserCall = await userModel.findOne({ _id: onwer_id }).select({ user_atlas: true, user_avatar_system: true, user_email: true })
-    if (!findUserReceiver || !findUserCall) {
-      socket.to(caller_id).emit('onPendingCallIsError', 'Không tìm thấy user')
-      return
+    const socketUserCall = global._userSocket.find((user) => user?.client_id === findUserCall?._id.toString())
+
+    if (!findUserReceiver) {
+      socket.emit('onPendingCallIsError', 'Không tìm thấy user')
     }
 
     const newCreatCall = {
@@ -67,7 +68,14 @@ class SocketCallVideo {
       call_id: createCall?._id,
       call_status: createCall?.call_status
     }
-    socket.to(findUserReceiver.socket_id).emit(SocketVideoCallEvent.onPendingCall, newData)
+    console.log({ socketUserCall })
+    if (findUserReceiver) {
+      socket.to(findUserReceiver!.socket_id).emit(SocketVideoCallEvent.onPendingCall, newData)
+
+    }
+    console.log('OK', newData)
+    socket.emit(SocketVideoCallEvent.onWaitingConnect, newData)
+
   }
 
   async emitRecjectCall(socket: Socket, data: TSocketEventCall) {
