@@ -18,6 +18,7 @@ export enum SocketVideoCallEvent {
   emitRejectCall = 'emitRejectCall',
   emitAccpetCall = "emitAccpetCall",
 
+  onOpenConnect = 'onOpenConnect',
   onAcceptCall = 'onAcceptCall',
   onRejectCall = 'onRejectCall',
   onPendingCall = 'onPendingCall',
@@ -122,8 +123,10 @@ class SocketCallVideo {
       return
     }
     console.clear()
-    console.log('bat may di')
-    socket.to(user_emiter.socket_id).emit(SocketVideoCallEvent.onAcceptCall, { ...data, ...newCall.toObject() })
+
+    const newData = { ...data, ...newCall.toObject() }
+    socket.emit(SocketVideoCallEvent.onOpenConnect, newData)
+    socket.to(user_emiter.socket_id).emit(SocketVideoCallEvent.onAcceptCall, newData)
 
   }
 
