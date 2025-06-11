@@ -72,12 +72,10 @@ class SocketCallVideo {
       call_id: createCall?._id,
       call_status: createCall?.call_status
     }
-    console.log({ socketUserCall })
     if (findUserReceiver) {
       socket.to(findUserReceiver!.socket_id).emit(SocketVideoCallEvent.onPendingCall, newData)
 
     }
-    console.log('OK', newData)
     socket.emit(SocketVideoCallEvent.onWaitingConnect, newData)
 
   }
@@ -119,13 +117,11 @@ class SocketCallVideo {
       )
       .select({ _id: true, call_status: true })
     const { user_emiter } = await SocketCallVideo.findUserEmiter({ user_id: caller_id })
-    console.log({ user_emiter })
 
     if (!user_emiter) {
       socket._error('Không thể thực hiện')
       return
     }
-    console.clear()
 
     const newData = { ...data, ...newCall.toObject() }
     socket.emit(SocketVideoCallEvent.onOpenConnect, newData)
@@ -134,7 +130,6 @@ class SocketCallVideo {
   }
   async emitCancelCall(socket: Socket, data: TSocketEventCall) {
     const { caller_id, onwer_id, receiver_id, call_id, user_emitter_id } = data
-    console.log({data})
     const newCall = await callModel
       .findOneAndUpdate(
         { _id: call_id! },
@@ -147,21 +142,21 @@ class SocketCallVideo {
         { new: true, upsert: true }
       )
       .select({ _id: true, call_status: true })
-    console.log({ user_emitter_id, receiver_id })
     if (user_emitter_id.toString() === receiver_id) {
       const { user_emiter } = await SocketCallVideo.findUserEmiter({ user_id: caller_id })
-      console.log({user_emiter})
       if (!user_emiter) {
         socket._error('Không thể thực hiện')
+        return
       }
       const newData = { ...data, ...newCall.toObject() }
       socket.to(user_emiter!.socket_id).emit(SocketVideoCallEvent.onCancelCall, newData)
     } else {
       const { user_emiter } = await SocketCallVideo.findUserEmiter({ user_id: receiver_id })
-      console.log({user_emiter})
 
       if (!user_emiter) {
         socket._error('Không thể thực hiện')
+        return
+
       }
       const newData = { ...data, ...newCall.toObject() }
       socket.to(user_emiter!.socket_id).emit(SocketVideoCallEvent.onCancelCall, newData)

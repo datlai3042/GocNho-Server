@@ -5,7 +5,6 @@ export const expriresAT = 60 * 30 * 1000 // 7 ngày tính bằng miligiây
 
 export const setCookieResponse = (res: Response, expires: Date, name: string, value: string, options?: CookieOptions) => {
   const expiryDate = new Date(expires)
-  console.log({expiryDate})
   res.cookie(name, value, { ...options, expires: expiryDate, sameSite: 'none', path: '/', secure: true })
   return expiryDate
 }
@@ -31,7 +30,6 @@ export const setCookieAuth = ({
 
   setCookieResponse(res, expireCookieTime, 'access_token', access_token, { httpOnly: true })
   setCookieResponse(res, expireCookieTime, 'refresh_token', refresh_token, { httpOnly: true })
-  console.log('OK Da set')
   return { expireToken: new Date(expireTokenTime), expireCookie: new Date(expireCookieTime) }
 }
 

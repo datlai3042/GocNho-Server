@@ -9,12 +9,15 @@ class SocketService {
   async connection(socket: Socket) {
     const cookie = parse(socket.handshake.headers.cookie || '')
     const client_id = cookie?.client_id || ''
+    console.log({client_id})
     if (client_id) {
       const found_user = global._userSocket.some((user) => user.client_id === client_id)
       if (!found_user) {
         global._userSocket.push({ client_id, socket_id: socket.id })
       }
     }
+
+    console.log({online: global._userSocket})
 
     socket.on('disconnect', () => {
       const client_id = cookie?.client_id || ''

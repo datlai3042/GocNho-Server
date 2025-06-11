@@ -84,7 +84,6 @@ export const verifyRefreshToken = ({ user, keyStore, client_id, token, key, req,
   const force = req.body.force
 
   jwt.verify(token, key, (error, decode) => {
-    console.log({ token, key, user })
     if (error) {
       return next(new ForbiddenError({ metadata: 'Token không đúng123' }))
     }
