@@ -30,12 +30,15 @@ export enum SocketVideoCallEvent {
 
 class SocketCallVideo {
   static async findUserEmiter({ user_id }: { user_id: string }) {
+    console.log({ user_id })
     const findUserCall = await userModel.findOne({ _id: new Types.ObjectId(user_id) }).select({ user_atlas: true, user_avatar_system: true, user_email: true })
+    console.log({ findUserCall })
     if (!findUserCall) {
       return { user_emiter: null }
     }
-    const user_socket = global._userSocket.find((user) => user.client_id === findUserCall?._id.toString())
 
+    const user_socket = global._userSocket.find((user) => user.client_id === findUserCall?._id.toString())
+    console.log({ user_socket })
     if (!user_socket) {
       return { user_emiter: null }
     }
@@ -48,11 +51,12 @@ class SocketCallVideo {
     }
   }
   async emitCall(socket: Socket, data: TSocketEventCall) {
+    console.log('processStart::emitCall')
     const { caller_id, onwer_id, receiver_id } = data
     const findUserReceiver = global._userSocket.find((user) => user?.client_id === receiver_id)
     const findUserCall = await userModel.findOne({ _id: onwer_id }).select({ user_atlas: true, user_avatar_system: true, user_email: true })
     const socketUserCall = global._userSocket.find((user) => user?.client_id === findUserCall?._id.toString())
-
+    console.log({ data, online: global?._userSocket })
     if (!findUserReceiver) {
       socket.emit('onPendingCallIsError', 'Không tìm thấy user')
     }
@@ -70,21 +74,23 @@ class SocketCallVideo {
       infoUserCall: findUserCall,
       findUserReceiver,
       call_id: createCall?._id,
-      call_status: createCall?.call_status
+      call_status: createCall?.call_status,
+
     }
     if (findUserReceiver) {
       socket.to(findUserReceiver!.socket_id).emit(SocketVideoCallEvent.onPendingCall, newData)
 
     }
     socket.emit(SocketVideoCallEvent.onWaitingConnect, newData)
+    console.log('processEnd::emitCall')
 
   }
 
   async emitRecjectCall(socket: Socket, data: TSocketEventCall) {
     const { caller_id, onwer_id, receiver_id } = data
-    const { user_emiter } = await SocketCallVideo.findUserEmiter({ user_id: onwer_id })
+    const { user_emiter } = await SocketCallVideo.findUserEmiter({ user_id: caller_id })
     if (!user_emiter) {
-      socket._error('Không thể thực hiện')
+      socket.emit('error_call', 'Không thể thực hiện')
       return
     }
     const newCall = await callModel
@@ -117,15 +123,29 @@ class SocketCallVideo {
       )
       .select({ _id: true, call_status: true })
     const { user_emiter } = await SocketCallVideo.findUserEmiter({ user_id: caller_id })
-
+    const findUserCall = await userModel.findOne({ _id: onwer_id }).select({ user_atlas: true, user_avatar_system: true, user_email: true })
+    const findUserReceiver = await userModel.findOne({ _id: receiver_id }).select({ user_atlas: true, user_avatar_system: true, user_email: true })
+    console.log({ findUserCall, findUserReceiver })
     if (!user_emiter) {
       socket._error('Không thể thực hiện')
       return
     }
 
-    const newData = { ...data, ...newCall.toObject() }
-    socket.emit(SocketVideoCallEvent.onOpenConnect, newData)
-    socket.to(user_emiter.socket_id).emit(SocketVideoCallEvent.onAcceptCall, newData)
+    const newData = {
+      ...data, ...newCall.toObject(),
+
+
+    }
+    socket.emit(SocketVideoCallEvent.onOpenConnect, {
+      ...newData,
+      infoUserCall: findUserCall,
+    })
+    socket.to(user_emiter.socket_id).emit(SocketVideoCallEvent.onAcceptCall, {
+      ...newData,
+      infoUserReceiver: findUserReceiver
+
+
+    })
 
   }
   async emitCancelCall(socket: Socket, data: TSocketEventCall) {
@@ -145,16 +165,17 @@ class SocketCallVideo {
     if (user_emitter_id.toString() === receiver_id) {
       const { user_emiter } = await SocketCallVideo.findUserEmiter({ user_id: caller_id })
       if (!user_emiter) {
-        socket._error('Không thể thực hiện')
+        socket.emit('call_error', 'Không thể thực hiện 1')
+
         return
       }
       const newData = { ...data, ...newCall.toObject() }
       socket.to(user_emiter!.socket_id).emit(SocketVideoCallEvent.onCancelCall, newData)
     } else {
       const { user_emiter } = await SocketCallVideo.findUserEmiter({ user_id: receiver_id })
-
+      console.log({ data })
       if (!user_emiter) {
-        socket._error('Không thể thực hiện')
+        socket.emit('call_error', `Không thể thực hiện 2 ${data}`)
         return
 
       }

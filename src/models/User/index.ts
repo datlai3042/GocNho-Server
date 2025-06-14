@@ -17,7 +17,7 @@ const userSchema = new Schema<Application.Account.User.UserSchema>(
     user_birthday: { type: Date },
     user_gender: { type: String, enum: ['MALE', 'FEMALE', 'OTHER'], default: 'MALE', required: true },
     user_roles: { type: String, enum: ['USER', 'ADMIN', 'GUEST'], default: 'USER', required: true },
-    user_avatar_system: { type: String, default: '123', required: true },
+    user_avatar_system: { type: String, default: 'https://res.cloudinary.com/cloud304/image/upload/v1749704073/gocnho/system/user_avatar/user_avatar_default.jpg', required: true },
     user_avatar_current: { type: String },
     user_auth: { type: String, enum: ['email', 'oAuth'], default: 'email' },
     user_avater_used: {

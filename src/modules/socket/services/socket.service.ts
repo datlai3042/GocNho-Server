@@ -6,18 +6,20 @@ class SocketService {
   constructor(private socketCallVideo: SocketCallVideo) {
     autoBind(this)
   }
+
   async connection(socket: Socket) {
+    console.clear()
+
     const cookie = parse(socket.handshake.headers.cookie || '')
     const client_id = cookie?.client_id || ''
-    console.log({client_id})
     if (client_id) {
-      const found_user = global._userSocket.some((user) => user.client_id === client_id)
-      if (!found_user) {
+      const found_user = global._userSocket.find((user) => user.client_id === client_id)
+      if (!found_user || !found_user?.socket_id) {
         global._userSocket.push({ client_id, socket_id: socket.id })
       }
     }
 
-    console.log({online: global._userSocket})
+    console.log({ online: global._userSocket })
 
     socket.on('disconnect', () => {
       const client_id = cookie?.client_id || ''
